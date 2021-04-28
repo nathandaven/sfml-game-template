@@ -14,6 +14,9 @@
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 
+// Game
+#include <Game.hpp>
+
 // Raspberry Pi
 #ifdef SFML_SYSTEM_LINUX
 	#ifdef __arm__
