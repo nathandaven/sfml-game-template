@@ -1,4 +1,12 @@
-# sfml-vscode-boilerplate
+# sfml-game-template
+
+This is my custom SFML template based on Andrew King's VSCode boilerplate. There are two branches, one with no implementations that starts with no engine implementations, and the master, which comes with a basic state machine, asset manager, and input manager. 
+
+Feel free to use this for whatever project, I created this to make my life easier whenever I start a new idea. Thanks!
+
+
+---------------------------------------
+## Original Readme
 
 A cross-platform [SFML](https://www.sfml-dev.org) 2.5.1 & C++17 build environment for [Visual Studio Code](https://code.visualstudio.com/)
 
