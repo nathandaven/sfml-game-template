@@ -1,4 +1,6 @@
 #include "Game.hpp"
+#include "Engine/StateMachine.hpp"
+#include "States/MainMenuState.hpp"
 
 /*
 	This Game object holds all of the primary game code and keeps it out of main.
@@ -10,23 +12,27 @@
 // private
 void Game::initVariables()
 {
-	this->window = nullptr;
+	this->_data->window = nullptr;
+	this->_data->states.addState(Engine::StateRef(new MainMenuState(this->_data)), false);
 }
 void Game::initWindow()
 {
 	// creating our window object
-	this->window = new sf::RenderWindow();
+	this->_data->window = new sf::RenderWindow();
 
 	// in Windows at least, this must be called before creating the window
-	float screenScalingFactor = platform.getScreenScalingFactor(this->window->getSystemHandle());
+	float screenScalingFactor = _platform.getScreenScalingFactor(this->_data->window->getSystemHandle());
 
 	// Use the screenScalingFactor to create video mode and set screen size - 720p by default
-	this->videoMode.height = 720.0f * screenScalingFactor;
-	this->videoMode.width = 1280.0f * screenScalingFactor;
+	this->_videoMode.height = SCREEN_HEIGHT * screenScalingFactor;
+	this->_videoMode.width = SCREEN_WIDTH * screenScalingFactor;
 
 	// creating our window view using the video mode and disabling resizablilty
-	this->window->create(this->videoMode, "Test Game 1", sf::Style::Titlebar | sf::Style::Close);
-	platform.setIcon(this->window->getSystemHandle());
+	this->_data->window->create(this->_videoMode, "Test Game 1", sf::Style::Titlebar | sf::Style::Close);
+	_platform.setIcon(this->_data->window->getSystemHandle());
+
+	// sets FPS vsync
+	this->_data->window->setFramerateLimit(60);
 }
 
 // Constructors
@@ -35,93 +41,57 @@ Game::Game()
 {
 	this->initVariables();
 	this->initWindow();
+
+	// running the new game
+	this->run();
 }
 
 Game::~Game()
 {
-	delete this->window;
+	delete this->_data->window;
 }
 
-//Accessors
+// Accessors
 bool Game::isRunning() const
 {
-	return this->window->isOpen();
+	return this->_data->window->isOpen();
 }
 
-// Functions
-
-void Game::updatePollEvents()
+void Game::run()
 {
-	// Event Polling
-	while (this->window->pollEvent(this->event))
+	// initializing a new Game
+
+	// time initialization
+	float newTime, frameTime, interpolation;
+	float currentTime = this->_clock.getElapsedTime().asSeconds();
+	float accumulator = 0.0f;
+
+	// Game Loop
+	while (this->isRunning())
 	{
-		switch (this->event.type)
+
+		this->_data->states.processStates();
+
+		newTime = this->_clock.getElapsedTime().asSeconds();
+		frameTime = newTime - currentTime;
+
+		if (frameTime > 0.25f)
 		{
-			case sf::Event::Closed:
-				this->window->close();
-				break;
-			case sf::Event::KeyPressed:
-				if (this->event.key.code == sf::Keyboard::Escape)
-					this->window->close();
-				break;
-			default:
-				break;
+			frameTime = 0.25f;
 		}
+
+		currentTime = newTime;
+		accumulator += frameTime;
+
+		while (accumulator >= dt)
+		{
+			this->_data->states.getActiveState()->updateInputs();
+			this->_data->states.getActiveState()->updateState(dt);
+
+			accumulator -= dt;
+		}
+
+		interpolation = accumulator / dt;
+		this->_data->states.getActiveState()->drawState(interpolation);
 	}
-}
-
-void Game::update()
-{
-	this->updatePollEvents();
-}
-
-/*
-@return null
-renders all game objects on screen (clear -> render -> display)
- */
-void Game::render()
-{
-	// just for fun, heres hello world text
-	// SAMPLE RENDER CODE:
-
-	// background color
-	this->window->clear(sf::Color::Black);
-
-	// write text
-	sf::Text text;
-	sf::Font font;
-
-	// throws error if cant load font
-	if (!font.loadFromFile("Content/joystix.ttf"))
-	{
-		// error...
-		throw GameException("yeah");
-	}
-
-	// select the font
-	text.setFont(font); // font is a sf::Font
-
-	// set the string to display
-	text.setString("Hello world!");
-
-	// set the character size
-	text.setCharacterSize(24); // in pixels, not points!
-
-	// set the color
-	text.setFillColor(sf::Color::White);
-
-	// set the text style
-	text.setStyle(sf::Text::Bold | sf::Text::Underlined);
-
-	text.setPosition(
-		(this->window->getSize().x / 2) - (text.getLocalBounds().width / 2),
-		(this->window->getSize().y / 2) - (text.getLocalBounds().height / 2));
-
-	// inside the main loop, between window.clear() and window.display()
-	this->window->draw(text);
-
-	// END SAMPLE RENDER CODE
-
-	// Displays rendered obejcts
-	this->window->display();
 }

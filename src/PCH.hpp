@@ -15,7 +15,7 @@
 #include <SFML/Window.hpp>
 
 // Game
-#include <Game.hpp>
+#include <Global.hpp>
 
 // Raspberry Pi
 #ifdef SFML_SYSTEM_LINUX
